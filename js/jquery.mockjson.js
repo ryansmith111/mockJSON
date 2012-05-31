@@ -22,7 +22,7 @@ $.mockJSON = function(request, template, is_array) {
         template:template,
         is_array:is_array
     });
-    
+
     return $;
 };
 
@@ -37,8 +37,14 @@ $.ajax = function(options) {
             // test if the mock regex matches the url
             if (mock.request.test(options.url)) {
                 // generate mockJSON from the template and return to ajax success callback
-                options.success($.mockJSON.generateFromTemplate(mock.template, '', mock.is_array));
-                return $;
+                var deferred = $.Deferred();
+                window.setTimeout(function(){
+                    //TODO update to .done since .success is deprecated
+                    options.success($.mockJSON.generateFromTemplate(mock.template, '', mock.is_array));
+                deferred.resolve();
+                }, 1000);
+                return deferred.promise();
+                //return $;
             }
         }
     }
@@ -52,7 +58,7 @@ $.ajax = function(options) {
 //      name: the name of template's property to process. 
 //          the name may include a range suffix, as in "|1-5", which will be parsed out and
 //          removed from the generated response
-//      is_array: boolean indicating an array template (object with single child) ONLY PASS IN INITIAL CALL
+//      is_array: boolean indicating an array template (object with single child) ONLY PASS IN INITIAL CALL, NOT IN RECURSION
 //
 // Added handling for array templates. Assume an array template is an object with a single child property:
 // template = 
@@ -91,6 +97,8 @@ $.mockJSON.generateFromTemplate = function(template, name, is_array) {
 
     var generated = null;
     switch (type(template)) {
+        // array assumes  its a template of just one entry
+        // if there is no range, then length is 0, so nothing gets rendered
         case 'array':
             generated = [];
             for (var i = 0; i < length; i++) {
@@ -112,8 +120,8 @@ $.mockJSON.generateFromTemplate = function(template, name, is_array) {
 
         case 'number':
             generated = (matches)
-                ? length
-                : template;
+                ? length  // if there was a range on the key, return a randon number within the range
+                : template; // otherwise just return the static number
             break;
 
         case 'boolean':
