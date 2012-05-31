@@ -1,15 +1,21 @@
 (function($) {
-
+// array of urls registered to be mocked
 var _mocked = [];
+// main entry function to add a new mockJSON template
+// parameters:
+//      request: a regexp to match a url
+//      template: a mockJSON template object
 $.mockJSON = function(request, template) {
+    // check if the current match is already defined
     for (var i = 0; i < _mocked.length; i++) {
         var mock = _mocked[i];
+        // if so, remove the existing one.Last in wins.
         if (mock.request.toString() == request.toString()) {
             _mocked.splice(i, 1);
             break;
         }
     }
-
+    // add the new template to the array
     _mocked.push({
         request:request,
         template:template
@@ -20,32 +26,39 @@ $.mockJSON = function(request, template) {
 
 $.mockJSON.random = true;
 
-
+// wrap built-in $.ajax so we can conditionally trigger mocked response
 var _original_ajax = $.ajax;
 $.ajax = function(options) {
-    if (options.dataType === 'json') {
+    if (options.dataType === 'json') {  // only override json requests
         for (var i = 0; i < _mocked.length; i++) {
             var mock = _mocked[i];
+            // test if the mock regex matches the url
             if (mock.request.test(options.url)) {
+                // generate mockJSON from the template and return to ajax success callback
                 options.success($.mockJSON.generateFromTemplate(mock.template));
                 return $;
             }
         }
     }
-    
+    // if no mock filter, call original $.ajax
     return _original_ajax.apply(this, arguments);
 }
 
-
+// recursively processes the template to generate JSON data
+// arguments:
+//      template: the mockJSON template object
+//      name: the name of template's property to process. 
+//          the name may include a range suffix, as in "|1-5", which will be parsed out and
+//          removed from the generated response
 $.mockJSON.generateFromTemplate = function(template, name) {
-    var length = 0;
+    var length = 0;  // the number of elements to generate
     var matches = (name || '').match(/\w+\|(\d+)-(\d+)/);
     if (matches) {
         var length_min = parseInt(matches[1], 10);
         var length_max = parseInt(matches[2], 10);
         length = Math.round(rand() * (length_max - length_min)) + length_min;
     }
-        
+
     var generated = null;
     switch (type(template)) {
         case 'array':
@@ -110,23 +123,23 @@ $.mockJSON.generateFromTemplate = function(template, name) {
 
 function getRandomData(key) {
     key = key.substr(1); // remove "@"
-    
+
     //var params = key.match(/\(((\d+),?)+\)/g) || [];
     var params = key.match(/\(([^\)]+)\)/g) || [];
-    
+
     if (!(key in $.mockJSON.data)) {
         console.log(key);
         console.log(params);
         return key;
     }
-    
+
     var a = $.mockJSON.data[key];
-    
+
     switch (type(a)) {
         case 'array':
             var index = Math.floor(a.length * rand());
             return a[index];
-            
+
         case 'function':
             return a();
     }
@@ -135,7 +148,7 @@ function getRandomData(key) {
 
 function type(obj) {
     return $.isArray(obj)
-        ? 'array' 
+        ? 'array'
         : (obj === null)
             ? 'null'
             : typeof obj;
@@ -170,15 +183,15 @@ $.mockJSON.data = {
     LETTER_UPPER : "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(''),
     LETTER_LOWER : "abcdefghijklmnopqrstuvwxyz".split(''),
     MALE_FIRST_NAME : ["James", "John", "Robert", "Michael", "William", "David",
-        "Richard", "Charles", "Joseph", "Thomas", "Christopher", "Daniel", 
+        "Richard", "Charles", "Joseph", "Thomas", "Christopher", "Daniel",
         "Paul", "Mark", "Donald", "George", "Kenneth", "Steven", "Edward",
         "Brian", "Ronald", "Anthony", "Kevin", "Jason", "Matthew", "Gary",
         "Timothy", "Jose", "Larry", "Jeffrey", "Frank", "Scott", "Eric"],
-    FEMALE_FIRST_NAME : ["Mary", "Patricia", "Linda", "Barbara", "Elizabeth", 
-        "Jennifer", "Maria", "Susan", "Margaret", "Dorothy", "Lisa", "Nancy", 
+    FEMALE_FIRST_NAME : ["Mary", "Patricia", "Linda", "Barbara", "Elizabeth",
+        "Jennifer", "Maria", "Susan", "Margaret", "Dorothy", "Lisa", "Nancy",
         "Karen", "Betty", "Helen", "Sandra", "Donna", "Carol", "Ruth", "Sharon",
-        "Michelle", "Laura", "Sarah", "Kimberly", "Deborah", "Jessica", 
-        "Shirley", "Cynthia", "Angela", "Melissa", "Brenda", "Amy", "Anna"], 
+        "Michelle", "Laura", "Sarah", "Kimberly", "Deborah", "Jessica",
+        "Shirley", "Cynthia", "Angela", "Melissa", "Brenda", "Amy", "Anna"],
     LAST_NAME : ["Smith", "Johnson", "Williams", "Brown", "Jones", "Miller",
         "Davis", "Garcia", "Rodriguez", "Wilson", "Martinez", "Anderson",
         "Taylor", "Thomas", "Hernandez", "Moore", "Martin", "Jackson",
