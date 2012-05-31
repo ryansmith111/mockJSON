@@ -224,26 +224,33 @@ $.mockJSON.helpers = {
     rand: rand,
     randomDate: randomDate
 };
-
-$.mockJSON.data = {
-    NUMBER : "0123456789".split(''),
-    LETTER_UPPER : "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(''),
-    LETTER_LOWER : "abcdefghijklmnopqrstuvwxyz".split(''),
-    MALE_FIRST_NAME : ["James", "John", "Robert", "Michael", "William", "David",
+var NUMBER = "0123456789".split('');
+var LETTER_UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
+var LETTER_LOWER = "abcdefghijklmnopqrstuvwxyz".split('');
+var MALE_FIRST_NAME = ["James", "John", "Robert", "Michael", "William", "David",
         "Richard", "Charles", "Joseph", "Thomas", "Christopher", "Daniel",
         "Paul", "Mark", "Donald", "George", "Kenneth", "Steven", "Edward",
         "Brian", "Ronald", "Anthony", "Kevin", "Jason", "Matthew", "Gary",
-        "Timothy", "Jose", "Larry", "Jeffrey", "Frank", "Scott", "Eric"],
-    FEMALE_FIRST_NAME : ["Mary", "Patricia", "Linda", "Barbara", "Elizabeth",
+        "Timothy", "Jose", "Larry", "Jeffrey", "Frank", "Scott", "Eric"];
+var FEMALE_FIRST_NAME = ["Mary", "Patricia", "Linda", "Barbara", "Elizabeth",
         "Jennifer", "Maria", "Susan", "Margaret", "Dorothy", "Lisa", "Nancy",
         "Karen", "Betty", "Helen", "Sandra", "Donna", "Carol", "Ruth", "Sharon",
         "Michelle", "Laura", "Sarah", "Kimberly", "Deborah", "Jessica",
-        "Shirley", "Cynthia", "Angela", "Melissa", "Brenda", "Amy", "Anna"],
-    LAST_NAME : ["Smith", "Johnson", "Williams", "Brown", "Jones", "Miller",
+        "Shirley", "Cynthia", "Angela", "Melissa", "Brenda", "Amy", "Anna"];
+var LAST_NAME = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Miller",
         "Davis", "Garcia", "Rodriguez", "Wilson", "Martinez", "Anderson",
         "Taylor", "Thomas", "Hernandez", "Moore", "Martin", "Jackson",
         "Thompson", "White", "Lopez", "Lee", "Gonzalez", "Harris", "Clark",
-        "Lewis", "Robinson", "Walker", "Perez", "Hall", "Young", "Allen"],
+        "Lewis", "Robinson", "Walker", "Perez", "Hall", "Young", "Allen"];
+$.mockJSON.data = {
+    NUMBER: NUMBER,
+    LETTER_UPPER : LETTER_UPPER,
+    LETTER_LOWER : LETTER_LOWER,
+    ALPHA_NUM: Array.prototype.concat(NUMBER, LETTER_UPPER, LETTER_LOWER),
+    FIRST_NAME : Array.prototype.concat(MALE_FIRST_NAME, FEMALE_FIRST_NAME),
+    MALE_FIRST_NAME : MALE_FIRST_NAME,
+    FEMALE_FIRST_NAME : FEMALE_FIRST_NAME,
+    LAST_NAME : LAST_NAME,
     EMAIL : function() {
         return getRandomData('@LETTER_LOWER')
             + '.'
@@ -251,6 +258,19 @@ $.mockJSON.data = {
             + '@'
             + getRandomData('@LAST_NAME').toLowerCase()
             + '.com';
+    },
+    // year parameter can be called by external data function to get
+    // dates for a specific year
+    // e.g.
+    //data.DATE_THIS_YEAR = function() {
+    //    return data.DATE_JSON(new Date().getFullYear());
+    //}
+    DATE_JSON : function(year){
+        var random_date = randomDate();
+        if(year) {
+            random_date.setYear(year);
+        }
+        return random_date.toJSON();
     },
     DATE_YYYY : function() {
         var yyyy = randomDate().getFullYear();
