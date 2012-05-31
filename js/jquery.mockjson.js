@@ -97,12 +97,36 @@ $.mockJSON.generateFromTemplate = function(template, name, is_array) {
 
     var generated = null;
     switch (type(template)) {
-        // array assumes  its a template of just one entry
-        // if there is no range, then length is 0, so nothing gets rendered
+        // arrays can be of multiple types:
+        // object array template: 
+        //      "array|1-2": [{"foo":@LETTER}]
+        // where we want to generate an array of objects from the single
+        // template, where the range defines the length of the generated
+        // array.
+        // A range must be specified in this case, else the length will
+        // be 0, and nothing will be rendered. TODO this may be a bug that should be fixed.
+        //
+        // data array template:
+        //      "array": ['@LAST_NAME','@LAST_NAME','@LAST_NAME'],
+        // where we just want to generate a single array of values,
+        // where we process each value in the array as a template.
+        // The length of the generated array is the same as the length
+        // of the template. A range must not be specified in this case.
+        // The data array template is limited, as there isn't currently
+        // a way to generate numbers. You can, however, specify static
+        // numbers, e.g.
+        //      "numbers" : [5,4,3,2,1];
         case 'array':
             generated = [];
+            // see if we have an object array template, or a data array
+            var is_object_template = (template.length === 1);
+            var length = is_object_template ? length : template.length;
+            var index = 0;
             for (var i = 0; i < length; i++) {
-                generated[i] = $.mockJSON.generateFromTemplate(template[0]);
+                // if its an object template, we always generate another
+                // copy of the template defined at index 0. Otherwise we
+                // traverse the array.
+                generated[i] = $.mockJSON.generateFromTemplate(template[is_object_template ? 0: i]);
             }
             break;
 
