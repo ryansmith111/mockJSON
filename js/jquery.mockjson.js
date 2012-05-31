@@ -5,7 +5,8 @@ var _mocked = [];
 // parameters:
 //      request: a regexp to match a url
 //      template: a mockJSON template object
-$.mockJSON = function(request, template) {
+//      is_array: boolean indicating that the template should return an array of items.
+$.mockJSON = function(request, template, is_array) {
     // check if the current match is already defined
     for (var i = 0; i < _mocked.length; i++) {
         var mock = _mocked[i];
@@ -18,7 +19,8 @@ $.mockJSON = function(request, template) {
     // add the new template to the array
     _mocked.push({
         request:request,
-        template:template
+        template:template,
+        is_array:is_array
     });
     
     return $;
@@ -35,7 +37,7 @@ $.ajax = function(options) {
             // test if the mock regex matches the url
             if (mock.request.test(options.url)) {
                 // generate mockJSON from the template and return to ajax success callback
-                options.success($.mockJSON.generateFromTemplate(mock.template));
+                options.success($.mockJSON.generateFromTemplate(mock.template, '', mock.is_array));
                 return $;
             }
         }
@@ -50,9 +52,37 @@ $.ajax = function(options) {
 //      name: the name of template's property to process. 
 //          the name may include a range suffix, as in "|1-5", which will be parsed out and
 //          removed from the generated response
-$.mockJSON.generateFromTemplate = function(template, name) {
-    var length = 0;  // the number of elements to generate
-    var matches = (name || '').match(/\w+\|(\d+)-(\d+)/);
+//      is_array: boolean indicating an array template (object with single child) ONLY PASS IN INITIAL CALL
+//
+// Added handling for array templates. Assume an array template is an object with a single child property:
+// template = 
+// { 
+//      "root|1-5": [
+//          {
+//          "id|+1":0, 
+//          "name":"@LAST_NAME"
+//          }
+//      ]
+// }
+// output:
+// [
+//   {"id": 0,"name":"Jones"},
+//   {"id": 1,"name":"Smith"},
+//   {"id": 2,"name":"Brown"}
+// ]
+$.mockJSON.generateFromTemplate = function(template, name, is_array) {
+
+    var length = 0; //the number of elements to generate
+
+    if(is_array){
+        for (var p in template) { 
+            name = p; // we use the name only to parse the range for the length of the output array
+            template = template[p]; // hoist the child value to be the template for each element of the array
+            break; // assume only one child element in an array template
+        }
+    }
+    var matches = (name || '').match(/\w+\|(\d+)-(\d+)/); //regex match range suffix, and capture min/max
+    // if we have a range, calculate random length within the range
     if (matches) {
         var length_min = parseInt(matches[1], 10);
         var length_max = parseInt(matches[2], 10);
